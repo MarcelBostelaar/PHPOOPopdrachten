@@ -4,9 +4,21 @@ class Plant {
     public $age;
     public $height;
 
+    function __construct($name, $age, $height){
+        $this->name = $name;
+        $this->age = $age;
+        $this->height = $height;
+    }
     //implement a constructor
 
     //Implement the "grow" and "cut" methods. Both take a number as an argument and modify the plants height.
+
+    function grow($val){
+        $this->height += $val;
+    }
+    function cut($val){
+        $this->height -= $val;
+    }
 
     public function displayInfo() {
         return "{$this->name}, {$this->age}, {$this->height}";
