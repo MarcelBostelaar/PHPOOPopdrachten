@@ -52,7 +52,7 @@ function growCutCheck($nameFunc, $funccall, $plant1Expected, $plant2Expected){
     global $plant1;
     global $plant2;
     if (! method_exists('Plant', $nameFunc)) {
-        echo "Mistake: The method grow does not exist in the class 'Plant'.<br>";
+        echo "Mistake: The method {$nameFunc} does not exist in the class 'Plant'.<br>";
         exit(1);
     } else {
         $funccall($plant1, 4);
