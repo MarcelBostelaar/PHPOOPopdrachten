@@ -76,7 +76,7 @@ function checkResult($obj, $funccall, $expectedResult){
     $allGood = true;
     //check typeof result
     if(!is_int($result)){
-        echo "Mistake: calculateArea returns value '{$result}' which is not an integer but a " . gettype($result) . "<br>";
+        echo "Mistake: {$funccall} returns value '{$result}' which is not an integer but a " . gettype($result) . "<br>";
         $allGood = false;
     }
     else{
