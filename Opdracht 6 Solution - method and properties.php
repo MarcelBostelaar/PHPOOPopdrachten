@@ -30,58 +30,267 @@ class Rectangle
 }
 
 
+function validate(){
+    validator::Create('Rectangle', 2, function(){
+        return new Rectangle(5, 10);
+    })
+        ->propertyPublic("width")
+        ->propertyPublic("height")
+        ->methodParameterCount("__construct", 2)
+        ->methodPublic("calculateArea")
+        ->methodParameterCount("calculateArea", 0)
+        ->methodPublic("calculatePerimeter")
+        ->methodParameterCount("describeRectangle", 0)
+        ->methodPublic("describeRectangle")
+        ->methodParameterCount("describeRectangle", 0)
+        ->breakpoint()
+        ->exitReportIfErrors()
+        ->execute("calculateArea")
+        ->assertResultEquals(50)
+        ->execute("calculatePerimeter")
+        ->assertResultEquals(30)
+        ->execute("describeRectangle")
+        ->assertResultEquals("The rectangle has a width of 5, a height of 10, an area of 50, and a perimeter of 30.")
+        ->report("Rectangle 1");
 
-//controle code
-
-function hasProperty($object, $propertyName){
-    $reflection = new ReflectionClass($object);
-    return $reflection->hasProperty($propertyName);
+    validator::Create('Rectangle', 2, function(){
+        return new Rectangle(7, 12);
+    })
+        ->execute("calculateArea")
+        ->assertResultEquals(84)
+        ->execute("calculatePerimeter")
+        ->assertResultEquals(38)
+        ->execute("describeRectangle")
+        ->assertResultEquals("The rectangle has a width of 7, a height of 12, an area of 84, and a perimeter of 38.")
+        ->report("Rectangle 2");
 }
 
-$rectangle1 = new Rectangle(8, 6);
-$rectangle2 = new Rectangle(4, 3);
-$allPropertiesExist = true;
-//check if calculatePerimeter exists
-if(!method_exists($rectangle1, "calculatePerimeter")){
-    echo "Mistake: Rectangle does not have a calculatePerimeter method<br>";
-    $allPropertiesExist = false;
-}
-if(!method_exists($rectangle2, "calculateArea")){
-    echo "Mistake: Rectangle does not have a calculateArea method<br>";
-    $allPropertiesExist = false;
-}
-if(!$allPropertiesExist){
-    exit(1);
-}
+#VALIDATORSTART
+?><?php
+class validator{
+    private $objectToValidate;
+    private $wrappedInReflector;
+    private $continueTests = true;
+    private $className;
+    private $lastResult = null;
+    private $lastInvocation = "";
+    private $errorLog = [];
+    private function __construct(){}
 
-function checkResult($obj, $funccall, $expectedResult){
-    $result = $obj->{$funccall}();
-    $allGood = true;
-    //check typeof result
-    if(!is_int($result)){
-        echo "Mistake: {$funccall} returns value '{$result}' which is not an integer but a " . gettype($result) . "<br>";
-        $allGood = false;
+    public static function Create($className, $constructorParamCount, $classInstanceFactory){
+        $x = new validator();
+        $x->className = $className;
+        $x->validateClassExists();
+        if(!$x->continueTests){
+            return $x;
+        }
+        $x->wrappedInReflector = new ReflectionClass($className);
+        $hasConstructor = $x->wrappedInReflector->getConstructor() !== null;
+        if(!$hasConstructor){
+            $x->addError("Class $className does not have a constructor");
+            return $x->breakpoint();
+        }
+        $x->checkConstructor($constructorParamCount)->breakpoint();
+        if(!$x->continueTests){
+            return $x;
+        }
+        $x->objectToValidate = $classInstanceFactory();
+        $x->objectFactory = $classInstanceFactory;
+        return $x;
     }
-    else{
-        if($result != $expectedResult){
-            echo "Mistake: calculateArea returns value {$result} instead of {$expectedResult}<br>";
-            $allGood = false;
+
+    public function exitReportIfErrors($customTestName = null){
+        if($this->hasErrors()){
+            $this->report($customTestName);
+            exit();
+        }
+        return $this;
+    }
+
+    public function hasErrors(){
+        return count($this->errorLog) > 0;
+    }
+
+    private function addError($message){
+        array_push($this->errorLog, $message);
+    }
+
+    public function report($customTestName = null){
+        if($customTestName == null){
+            $testname = "class " . $this->className;
+        }
+        else{
+            $testname = "test " . $customTestName;
+        }
+        if(count($this->errorLog) > 0){
+            echo "Validation failed for $testname<br>";
+            foreach($this->errorLog as $error){
+                echo " - $error<br>";
+            }
+        }
+        else{
+            echo "Validation passed for $testname<br>";
         }
     }
-    return $allGood;
-}
 
-$resultsAreCorrect = true;
-$resultsAreCorrect &= checkResult($rectangle1, "calculateArea", 48);
-$resultsAreCorrect &= checkResult($rectangle2, "calculateArea", 12);
-$resultsAreCorrect &= checkResult($rectangle1, "calculatePerimeter", 28);
-$resultsAreCorrect &= checkResult($rectangle2, "calculatePerimeter", 14);
-if(!$resultsAreCorrect){
-    exit(1);
-}
-if($rectangle1->describeRectangle() != "The rectangle has a width of 8, a height of 6, an area of 48, and a perimeter of 28."){
-    echo "Mistake: describeRectangle returns wrong value. Remember to not change the describeRectangle function.<br>";
-    exit(1);
-}
+    public function breakpoint(){
+        if(count($this->errorLog) > 0){
+            $this->continueTests = false;
+        }
+        return $this;
+    }
 
-echo "All tests passed!";
+    private function validateClassExists(){
+        if(!$this->continueTests){
+            return $this;
+        }
+        if(!class_exists($this->className)){
+            $this->addError("Class $this->className does not exist");
+        }
+        return $this->breakpoint();
+    }
+
+    public function method($methodName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasMethod($methodName)) {
+            $this->addError("Method $methodName does not exist in class $this->className");
+        }
+        return $this;
+    }
+
+    public function methodPublic($methodName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasMethod($methodName)) {
+            return $this->method($methodName);
+        }
+        if (!$this->wrappedInReflector->getMethod($methodName)->isPublic()) {
+            $this->addError("Method $methodName is not public in class $this->className");
+        }
+        return $this;
+    }
+
+    public function methodPrivate($methodName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasMethod($methodName)) {
+            return $this->method($methodName);
+        }
+        if (!$this->wrappedInReflector->getMethod($methodName)->isPrivate()) {
+            $this->addError("Method $methodName is not private in class $this->className");
+        }
+        return $this;
+    }
+
+    private function checkConstructor($expectedParameterCount)
+    {
+        return $this->methodParameterCount('__construct', $expectedParameterCount);
+    }
+
+    public function methodParameterCount($methodName, $expectedParameterCount)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        $this->method($methodName);
+        $method = $this->wrappedInReflector->getMethod($methodName);
+        $actualParameterCount = $method->getNumberOfParameters();
+        if ($actualParameterCount !== $expectedParameterCount) {
+            $this->addError("Method $methodName in class $this->className does not have $expectedParameterCount parameters, but has $actualParameterCount");
+        }
+        return $this;
+    }
+
+    public function property($propertyName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasProperty($propertyName)) {
+            $this->addError("Property $propertyName does not exist in class $this->className");
+        }
+        return $this;
+    }
+
+    public function propertyPublic($propertyName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasProperty($propertyName)) {
+            return $this->property($propertyName);
+        }
+        if (!$this->wrappedInReflector->getProperty($propertyName)->isPublic()) {
+            $this->addError("Property $propertyName is not public in class $this->className");
+        }
+        return $this;
+    }
+
+    public function propertyPrivate($propertyName)
+    {
+        if(!$this->continueTests){
+            return $this;
+        }
+        if (!$this->wrappedInReflector->hasProperty($propertyName)) {
+            return $this->property($propertyName);
+        }
+        if (!$this->wrappedInReflector->getProperty($propertyName)->isPrivate()) {
+            $this->addError("Property $propertyName is not private in class $this->className");
+        }
+        return $this;
+    }
+
+    public function execute($methodName, ...$params){
+        if(!$this->continueTests){
+            return $this;
+        }
+        try{
+            $this->lastInvocation = "$methodName with parameters " . implode(", ", $params);
+            $method = $this->wrappedInReflector->getMethod($methodName);
+            $method->setAccessible(true);
+            $this->lastResult = $method->invoke($this->objectToValidate, ...$params);
+        }
+        catch(Exception $e){
+            $this->addError("Error when executing '$this->lastInvocation': " . $e->getMessage());
+        }
+        return $this;
+    }
+
+    public function construct(...$params){
+        return $this->execute('__construct', ...$params);
+    }
+
+    public function assertResultEquals($expected){
+        if(!$this->continueTests){
+            return $this;
+        }
+        if($this->lastResult !== $expected){
+            $this->addError("When calling '$this->lastInvocation', Expected result '$expected', got '$this->lastResult'");
+        }
+        return $this;
+    }
+
+    public function assertPropertyEquals($propertyName, $expected){
+        if(!$this->continueTests){
+            return $this;
+        }
+        $property = $this->wrappedInReflector->getProperty($propertyName);
+        $property->setAccessible(true);
+        $actual = $property->getValue($this->objectToValidate);
+        if($actual !== $expected){
+            $this->addError("Expected property $propertyName to be '$expected', got '$actual'");
+        }
+        return $this;
+    }
+}
+?><?php
+#VALIDATOREND
+
+validate();

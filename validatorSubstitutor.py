@@ -16,9 +16,9 @@ def replace_in_php_files(folder_path, validator_file):
                 with open(file_path, 'r') as php_file:
                     content = php_file.read()
 
-                # Replace #VALIDATORREPLACE with #VALIDATORSTART#VALIDATOREND
+                # Replace #VALIDATORINSERT with #VALIDATORSTART#VALIDATOREND
                 content = content.replace(
-                    "#VALIDATORREPLACE",
+                    "#VALIDATORINSERT",
                     "#VALIDATORSTART#VALIDATOREND"
                 )
 
