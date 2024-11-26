@@ -1,93 +1,145 @@
 <?php
 
-class Kerstboom{
 
+class Order
+{
+    // Private properties
+    private $orderId;
+    private $items = [];
+    private $totalAmount = 0;
 
-    //Maak een private variabele voor hoogte, plek en versiering
+    // Public property
+    public $status = 'pending'; //Kan ook "delivered" of "cancelled" zijn
 
-
-    public function __construct($hoogte, $plek){
-        $this->hoogte = $hoogte;
-        $this->plek = $plek;
-        $this->versiering = [];
+    // Constructor
+    public function __construct($orderId)
+    {
+        $this->setOrderId($orderId);
     }
 
-    public function addVersiering($versiering){
-        array_push($this->versiering, $versiering);
+    // Getter for orderId
+    public function getOrderId()
+    {
+        return $this->orderId;
     }
 
-    public function printVersiering(){
-        $result = "";
-        foreach($this->versiering as $versiering){
-            $result .= $versiering . ", ";
+    // Setter for orderId
+    public function setOrderId($orderId)
+    {
+        $this->orderId = $orderId;
+    }
+
+    // Getter for totalAmount
+    public function getTotalAmount()
+    {
+        return $this->totalAmount;
+    }
+
+    // Add item to the order
+    public function addItem($itemName, $price, $quantity)
+    {
+        $this->items[] = [
+            'itemName' => $itemName,
+            'price' => $price,
+            'quantity' => $quantity,
+        ];
+
+        // Update the total amount
+        $this->updateTotalAmount();
+    }
+
+    // Get all items
+    public function getItems()
+    {
+        return $this->items;
+    }
+
+    // Private method to update the total amount
+    private function updateTotalAmount()
+    {
+        $this->totalAmount = 0; // Reset total amount
+
+        foreach ($this->items as $item) {
+            $this->totalAmount += $item['price'] * $item['quantity'];
         }
-        return $result;
     }
 
-    //Maak een get functie voor hoogte, versiering en plek
-
-
+    // Change order status
+    public function changeStatus($newStatus)
+    {
+        $this->status = $newStatus;
+    }
 }
 
 function validate(){
-    $a = validator::Create('Kerstboom', 2, function(){
-        return new Kerstboom(3.4, "Woonkamer");
+    $order1 = validator::Create('Order', 1, function(){
+        return new Order(1);
     });
-    $b = validator::Create('Kerstboom', 2, function(){
-        return new Kerstboom(7, "Tuin");
+    $order2 = validator::Create('Order', 1, function(){
+        return new Order(2);
     });
-    $a
-        ->propertyPrivate('hoogte')
-        ->propertyPrivate('plek')
-        ->propertyPrivate('versiering')
-        ->methodPublic('getHoogte')
-        ->methodPublic('getPlek')
-        ->methodPublic('setPlek')
-        ->methodPublic('addVersiering')
-        ->methodPublic('printVersiering')
+
+    $order1
+        ->methodPublic('getOrderId')
+        ->methodPublic('setOrderId')
+        ->methodPublic('getTotalAmount')
+        ->methodPublic('addItem')
+        ->methodPublic('getItems')
+        ->methodPublic('changeStatus')
+        ->propertyPrivate('orderId')
+        ->propertyPrivate('items')
+        ->propertyPrivate('totalAmount')
+        ->propertyPublic('status')
         ->breakpoint()
-        ->exitReportIfErrors("Kerstboom a")
-        ->execute('getHoogte')
-        ->assertResultEquals(3.4)
-        ->execute('getPlek')
-        ->assertResultEquals("Woonkamer")
-        ->execute('setPlek', "Slaapkamer")
-        ->execute('getPlek')
-        ->assertResultEquals("Slaapkamer")
-        ->execute('printVersiering')
-        ->assertResultEquals("")
-        ->execute("addVersiering", "Kerstbal")
-        ->execute("addVersiering", "Slinger")
-        ->execute("addVersiering", "Piek")
-        ->execute("addVersiering", "Kerstbal")
-        ->execute('printVersiering')
-        ->assertResultEquals("Kerstbal, Slinger, Piek, Kerstbal, ")
-        ->report("Kerstboom a");
+        ->methodParameterCount('getOrderId', 0)
+        ->methodParameterCount('setOrderId', 1)
+        ->methodParameterCount('getTotalAmount', 0)
+        ->methodParameterCount('addItem', 3)
+        ->methodParameterCount('getItems', 0)
+        ->methodParameterCount('changeStatus', 1)
+        ->breakpoint()
+        ->exitReportIfErrors("Order 1")
+        ->execute('getOrderId')
+        ->assertResultEquals(1)
+        ->execute('setOrderId', 3)
+        ->execute('getOrderId')
+        ->assertResultEquals(3)
+        ->execute('getTotalAmount')
+        ->assertResultEquals(0)
+        ->execute('addItem', 'item1', 10, 2)
+        ->execute('getTotalAmount')
+        ->assertResultEquals(20)
+        ->execute('addItem', 'item2', 5, 3)
+        ->execute('getTotalAmount')
+        ->assertResultEquals(35)
+        ->execute('getItems')
+        ->assertResultEquals([['itemName' => 'item1', 'price' => 10, 'quantity' => 2], ['itemName' => 'item2', 'price' => 5, 'quantity' => 3]])
+        ->assertPropertyEquals('status', 'pending')
+        ->execute('changeStatus', 'delivered')
+        ->assertPropertyEquals('status', 'delivered')
+        ->report("Order 1");
 
-    $b  ->execute('getHoogte')
+    $order2
+        ->execute('getOrderId')
+        ->assertResultEquals(2)
+        ->execute('setOrderId', 7)
+        ->execute('getOrderId')
         ->assertResultEquals(7)
-        ->execute('getPlek')
-        ->assertResultEquals("Tuin")
-        ->execute('setPlek', "Zolder")
-        ->execute('getPlek')
-        ->assertResultEquals("Zolder")
-        ->execute('printVersiering')
-        ->assertResultEquals("")
-        ->execute("addVersiering", "Slinger")
-        ->execute("addVersiering", "Piek")
-        ->execute("addVersiering", "Slinger")
-        ->execute("addVersiering", "Kerstbal")
-        ->execute('printVersiering')
-        ->assertResultEquals("Slinger, Piek, Slinger, Kerstbal, ")
-        ->report("Kerstboom b");
+        ->execute('getTotalAmount')
+        ->assertResultEquals(0)
+        ->execute('addItem', 'item1', 30, 5)
+        ->execute('getTotalAmount')
+        ->assertResultEquals(150)
+        ->execute('addItem', 'item2', 3, 2)
+        ->execute('getTotalAmount')
+        ->assertResultEquals(156)
+        ->execute('getItems')
+        ->assertResultEquals([['itemName' => 'item1', 'price' => 30, 'quantity' => 5], ['itemName' => 'item2', 'price' => 3, 'quantity' => 2]])
+        ->assertPropertyEquals('status', 'pending')
+        ->execute('changeStatus', 'cancelled')
+        ->assertPropertyEquals('status', 'cancelled')
+        ->report("Order 2");
 }
-
-
-
-
-
-
-
 
 #VALIDATORSTART
 ?><?php
