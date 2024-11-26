@@ -1,33 +1,120 @@
 <?php
-class Rectangle
-{
-    public $width;
-    private $height;
 
-    public function __construct($width, $height)
-    {
-        $this->width = $width;
-        $this->height = $height;
+class Kerstboom{
+    private $hoogte;
+    private $versiering;
+    private $plek;
+
+    public function __construct($hoogte, $plek){
+        $this->hoogte = $hoogte;
+        $this->plek = $plek;
+        $this->versiering = [];
     }
 
-    public function calculateArea()
-    {
-        return $this->width * $this->height;
+    public function addVersiering($versiering){
+        array_push($this->versiering, $versiering);
     }
 
-    private function calculatePerimeter()
-    {
-        return 2 * ($this->width + $this->height);
+    public function printVersiering(){
+        $result = "";
+        foreach($this->versiering as $versiering){
+            $result .= $versiering . ", ";
+        }
+        return $result;
     }
 
-    public function describeRectangle()
-    {
-        $area = $this->calculateArea();
-        $perimeter = $this->calculatePerimeter();
-        return "The rectangle has a width of {$this->width}, a height of {$this->height}, an area of {$area}, and a perimeter of {$perimeter}.";
+    public function getHoogte(){
+        return $this->hoogte;
+    }
+
+    public function setPlek($plek){
+        $this->plek = $plek;
+    }
+
+    public function getPlek(){
+        return $this->plek;
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function validate(){
+    $a = validator::Create('Kerstboom', 2, function(){
+        return new Kerstboom(3.4, "Woonkamer");
+    });
+    $b = validator::Create('Kerstboom', 2, function(){
+        return new Kerstboom(7, "Tuin");
+    });
+    $a
+        ->propertyPrivate('hoogte')
+        ->propertyPrivate('plek')
+        ->propertyPrivate('versiering')
+        ->methodPublic('getHoogte')
+        ->methodPublic('getPlek')
+        ->methodPublic('setPlek')
+        ->methodPublic('addVersiering')
+        ->methodPublic('printVersiering')
+        ->breakpoint()
+        ->exitReportIfErrors("Kerstboom a")
+        ->execute('getHoogte')
+        ->assertResultEquals(3.4)
+        ->execute('getPlek')
+        ->assertResultEquals("Woonkamer")
+        ->execute('setPlek', "Slaapkamer")
+        ->execute('getPlek')
+        ->assertResultEquals("Slaapkamer")
+        ->execute('printVersiering')
+        ->assertResultEquals("")
+        ->execute("addVersiering", "Kerstbal")
+        ->execute("addVersiering", "Slinger")
+        ->execute("addVersiering", "Piek")
+        ->execute("addVersiering", "Kerstbal")
+        ->execute('printVersiering')
+        ->assertResultEquals("Kerstbal, Slinger, Piek, Kerstbal, ")
+        ->report("Kerstboom a");
+
+    $b  ->execute('getHoogte')
+        ->assertResultEquals(7)
+        ->execute('getPlek')
+        ->assertResultEquals("Tuin")
+        ->execute('setPlek', "Zolder")
+        ->execute('getPlek')
+        ->assertResultEquals("Zolder")
+        ->execute('printVersiering')
+        ->assertResultEquals("")
+        ->execute("addVersiering", "Slinger")
+        ->execute("addVersiering", "Piek")
+        ->execute("addVersiering", "Slinger")
+        ->execute("addVersiering", "Kerstbal")
+        ->execute('printVersiering')
+        ->assertResultEquals("Slinger, Piek, Slinger, Kerstbal, ")
+        ->report("Kerstboom b");
+}
 #VALIDATORSTART
 ?><?php
 class validator{
@@ -256,23 +343,4 @@ class validator{
 ?><?php
 #VALIDATOREND
 
-validator::Create('Rectangle', 2, function(){
-    return new Rectangle(5, 10);
-})
-    ->propertyPublic("width")
-    ->propertyPrivate("height")
-    ->methodParameterCount("__construct", 2)
-    ->methodPublic("calculateArea")
-    ->methodParameterCount("calculateArea", 0)
-    ->methodPrivate("calculatePerimeter")
-    ->methodParameterCount("describeRectangle", 0)
-    ->methodPublic("describeRectangle")
-    ->methodParameterCount("describeRectangle", 0)
-    ->breakpoint()
-    ->execute("calculateArea")
-    ->assertResultEquals(50)
-    ->execute("calculatePerimeter")
-    ->assertResultEquals(30)
-    ->execute("describeRectangle")
-    ->assertResultEquals("The rectangle has a width of 5, a height of 10, an area of 50, and a perimeter of 30.")
-    ->report();
+validate();

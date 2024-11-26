@@ -31,19 +31,37 @@ class validator{
         return $x;
     }
 
+    public function exitReportIfErrors($customTestName = null){
+        if($this->hasErrors()){
+            $this->report($customTestName);
+            exit();
+        }
+        return $this;
+    }
+
+    public function hasErrors(){
+        return count($this->errorLog) > 0;
+    }
+
     private function addError($message){
         array_push($this->errorLog, $message);
     }
 
-    public function report(){
+    public function report($customTestName = null){
+        if($customTestName == null){
+            $testname = "class " . $this->className;
+        }
+        else{
+            $testname = "test " . $customTestName;
+        }
         if(count($this->errorLog) > 0){
-            echo "Validation failed for class $this->className<br>";
+            echo "Validation failed for $testname<br>";
             foreach($this->errorLog as $error){
                 echo " - $error<br>";
             }
         }
         else{
-            echo "Validation passed for class $this->className<br>";
+            echo "Validation passed for $testname<br>";
         }
     }
 
@@ -80,7 +98,9 @@ class validator{
         if(!$this->continueTests){
             return $this;
         }
-        $this->method($methodName);
+        if (!$this->wrappedInReflector->hasMethod($methodName)) {
+            return $this->method($methodName);
+        }
         if (!$this->wrappedInReflector->getMethod($methodName)->isPublic()) {
             $this->addError("Method $methodName is not public in class $this->className");
         }
@@ -92,14 +112,16 @@ class validator{
         if(!$this->continueTests){
             return $this;
         }
-        $this->method($methodName);
+        if (!$this->wrappedInReflector->hasMethod($methodName)) {
+            return $this->method($methodName);
+        }
         if (!$this->wrappedInReflector->getMethod($methodName)->isPrivate()) {
             $this->addError("Method $methodName is not private in class $this->className");
         }
         return $this;
     }
 
-    public function checkConstructor($expectedParameterCount)
+    private function checkConstructor($expectedParameterCount)
     {
         return $this->methodParameterCount('__construct', $expectedParameterCount);
     }
@@ -134,7 +156,9 @@ class validator{
         if(!$this->continueTests){
             return $this;
         }
-        $this->property($propertyName);
+        if (!$this->wrappedInReflector->hasProperty($propertyName)) {
+            return $this->property($propertyName);
+        }
         if (!$this->wrappedInReflector->getProperty($propertyName)->isPublic()) {
             $this->addError("Property $propertyName is not public in class $this->className");
         }
@@ -146,7 +170,9 @@ class validator{
         if(!$this->continueTests){
             return $this;
         }
-        $this->property($propertyName);
+        if (!$this->wrappedInReflector->hasProperty($propertyName)) {
+            return $this->property($propertyName);
+        }
         if (!$this->wrappedInReflector->getProperty($propertyName)->isPrivate()) {
             $this->addError("Property $propertyName is not private in class $this->className");
         }
