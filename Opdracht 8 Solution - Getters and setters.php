@@ -153,7 +153,7 @@ class validator{
     private $errorLog = [];
     private function __construct(){}
 
-    public static function Create($className, $constructorParamCount, $classInstanceFactory){
+    public static function Create($className, $constructorParamCount, $classInstanceFactory, $isInterface = false){
         $x = new validator();
         $x->className = $className;
         $x->validateClassExists();
@@ -161,6 +161,9 @@ class validator{
             return $x;
         }
         $x->wrappedInReflector = new ReflectionClass($className);
+        if($isInterface){
+            return $x;
+        }
         $hasConstructor = $x->wrappedInReflector->getConstructor() !== null;
         if(!$hasConstructor){
             $x->addError("Class $className does not have a constructor");

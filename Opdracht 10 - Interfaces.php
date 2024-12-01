@@ -1,3 +1,47 @@
+<?php
+
+// Define an interface
+interface Shape {
+    public function calculateArea(): float;
+    public function display(): void;
+}
+
+// Implement the interface in a class
+class Circle{
+    private float $radius;
+
+    public function __construct(float $radius) {
+        $this->radius = $radius;
+    }
+
+    public function calculateArea(): float {
+        return pi() * $this->radius ** 2;
+    }
+
+    public function display(): void {
+        echo "Circle with radius {$this->radius} has area: " . $this->calculateArea() . PHP_EOL;
+    }
+}
+
+// Another implementation of the same interface
+class Rectangle{
+    private float $width;
+    private float $height;
+
+    public function __construct(float $width, float $height) {
+        $this->width = $width;
+        $this->height = $height;
+    }
+
+
+    public function display(): void {
+        echo "Rectangle with width {$this->width} and height {$this->height} has area: " . $this->calculateArea() . PHP_EOL;
+    }
+}
+
+
+
+#VALIDATORSTART
 ?><?php
 class validator{
     private $objectToValidate;
@@ -226,3 +270,25 @@ class validator{
     }
 }
 ?><?php
+#VALIDATOREND
+
+function validate(){
+    validator::Create("Shape", 0, function(){}, true)
+        ->method('calculateArea')
+        ->method('display')
+        ->exitReportIfErrors("Shape interface");
+
+    $mistake = false;
+    if(!in_array(Shape::class, class_implements(Circle::class))){
+        echo "Circle does not implement Shape interface<br>";
+        $mistake = true;
+    }
+    if(!in_array(Shape::class, class_implements(Rectangle::class))){
+        echo "Rectangle does not implement Shape interface<br>";
+        $mistake = true;
+    }
+    if($mistake){
+        exit();
+    }
+    echo "All tests passed<br>";
+}
