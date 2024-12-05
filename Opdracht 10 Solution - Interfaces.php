@@ -42,7 +42,7 @@ class Rectangle implements Shape{
     }
 }
 
-
+validate()
 
 #VALIDATORSTART
 ?><?php
@@ -59,7 +59,12 @@ class validator{
     public static function Create($className, $constructorParamCount, $classInstanceFactory, $isInterface = false){
         $x = new validator();
         $x->className = $className;
-        $x->validateClassExists();
+        if($isInterface){
+            $x->validateInterfaceExists();
+        }
+        else{
+            $x->validateClassExists();
+        }
         if(!$x->continueTests){
             return $x;
         }
@@ -127,6 +132,16 @@ class validator{
             return $this;
         }
         if(!class_exists($this->className)){
+            $this->addError("Class $this->className does not exist");
+        }
+        return $this->breakpoint();
+    }
+
+    private function validateInterfaceExists(){
+        if(!$this->continueTests){
+            return $this;
+        }
+        if(!interface_exists($this->className)){
             $this->addError("Class $this->className does not exist");
         }
         return $this->breakpoint();
